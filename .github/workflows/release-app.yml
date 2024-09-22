@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       upload_url: ${{ steps.create_release.outputs.upload_url }}
+      id: ${{ steps.create_release.outputs.id }}
 
     steps:
       - uses: actions/checkout@v4
@@ -196,6 +197,11 @@ jobs:
           args: ${{ matrix.args }}
           projectPath: "./screenpipe-app-tauri"
           tauriScript: bunx tauri -v
+          releaseId: ${{ needs.draft.outputs.id }}
+          tagName: app-v__VERSION__ # the action automatically replaces \_\_VERSION\_\_ with the app version.
+          releaseName: 'App v__VERSION__'
+          releaseBody: 'See the assets to download this version and install.'
+         
 
       - name: Upload Release Assets
         uses: actions/upload-release-asset@v1
