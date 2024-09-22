@@ -1,10 +1,4 @@
-# # Run for macOS
-# act -W .github/workflows/release-app.yml --container-architecture linux/amd64 -j publish-tauri -P macos-latest=-self-hosted
-
-# # Run for Linux
-# act -W .github/workflows/release-app.yml --container-architecture linux/amd64 -j publish-tauri -P ubuntu-22.04
-
-name: Release App
+name: Release App to github
 
 on:
   push:
@@ -19,11 +13,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: create draft release
-        uses: crabnebula-dev/cloud-release@v0
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          command: release draft ${{ secrets.CN_APP_SLUG }} --framework tauri
-          api-key: ${{ secrets.CN_API_KEY }}
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: true
+          prerelease: false
 
   publish-tauri:
     needs: draft
@@ -208,9 +207,12 @@ jobs:
           projectPath: "./screenpipe-app-tauri"
           tauriScript: bunx tauri -v
 
-      - name: Upload Assets to CrabNebula Cloud
-        uses: crabnebula-dev/cloud-release@v0
+      - name: Upload Release Assets
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          command: release upload ${{ secrets.CN_APP_SLUG }} --framework tauri
-          api-key: ${{ secrets.CN_API_KEY }}
-          path: ./screenpipe-app-tauri/src-tauri
+          upload_url: ${{ needs.draft.outputs.upload_url }}
+          asset_path: ./screenpipe-app-tauri/src-tauri/target/release/bundle/**/*
+          asset_name: ${{ matrix.platform }}-${{ github.ref }}.zip
+          asset_content_type: application/zip
